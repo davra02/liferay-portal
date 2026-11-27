@@ -163,6 +163,68 @@ describe('CommentsPanel', () => {
 		expect(screen.queryByTitle('rate-this-as-bad')).not.toBeInTheDocument();
 	});
 
+	it('tells that there are no comments and that they cannot be added when read only', () => {
+		renderComponent('', true, []);
+
+		expect(
+			screen.getByText('there-are-no-comments-yet')
+		).toBeInTheDocument();
+		expect(
+			screen.getByText('you-do-not-have-permission-to-add-comments')
+		).toBeInTheDocument();
+	});
+
+	it('tells that there are no comments without the permission message when comments can be added', () => {
+		renderComponent('addCommentURL', false, []);
+
+		expect(screen.getByText('add-comment')).toBeInTheDocument();
+		expect(
+			screen.getByText('there-are-no-comments-yet')
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText('you-do-not-have-permission-to-add-comments')
+		).not.toBeInTheDocument();
+	});
+
+	it('does not tell that there are no comments when there are comments', () => {
+		renderComponent();
+
+		expect(screen.getByText('Parent comment')).toBeInTheDocument();
+		expect(
+			screen.queryByText('there-are-no-comments-yet')
+		).not.toBeInTheDocument();
+	});
+
+	it('does not tell that there are no comments while they are loading', async () => {
+		let resolveComments: (value: {data: Comment[]}) => void = () => {};
+
+		(CommentService.getComments as jest.Mock).mockReturnValue(
+			new Promise((resolve) => {
+				resolveComments = resolve;
+			})
+		);
+
+		render(
+			<CommentsPanel
+				addCommentURL="addCommentURL"
+				deleteCommentURL="deleteCommentURL"
+				editCommentURL="editCommentURL"
+				editorConfig={{}}
+				getCommentsURL="getCommentsURL"
+			/>
+		);
+
+		expect(
+			screen.queryByText('there-are-no-comments-yet')
+		).not.toBeInTheDocument();
+
+		resolveComments({data: []});
+
+		expect(
+			await screen.findByText('there-are-no-comments-yet')
+		).toBeInTheDocument();
+	});
+
 	it('hides the edit action when the comment cannot be updated', async () => {
 		renderComponent('addCommentURL', false, [
 			{...initialComments[0], children: [], hasUpdatePermission: false},
