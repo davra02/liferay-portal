@@ -6,6 +6,7 @@
 import ClayAlert from '@clayui/alert';
 import ClayButton, {ClayButtonWithIcon} from '@clayui/button';
 import {ClayDropDownWithItems} from '@clayui/drop-down';
+import ClayEmptyState from '@clayui/empty-state';
 import ClayIcon from '@clayui/icon';
 import Sticker from '@clayui/sticker';
 import classNames from 'classnames';
@@ -19,6 +20,7 @@ import {escapeHTML} from 'frontend-js-web';
 import {Ratings} from 'ratings-taglib';
 import React, {useEffect, useRef, useState} from 'react';
 
+import {getImage} from '../../../common/utils/getImage';
 import CommentService, {Comment} from '../../services/CommentService';
 import getCommentMentionConfig from '../../utils/getCommentMentionConfig';
 import MentionUserPicker from './MentionUserPicker';
@@ -55,6 +57,7 @@ export default function CommentsPanel({
 	readOnly?: boolean;
 }) {
 	const [fetchedComments, setFetchedComments] = useState<Comment[]>([]);
+	const [fetchedCommentsLoaded, setFetchedCommentsLoaded] = useState(false);
 	const [commentNoLongerAvailable, setCommentNoLongerAvailable] = useState(
 		() =>
 			!!initialComments &&
@@ -85,6 +88,7 @@ export default function CommentsPanel({
 			const comments = data ?? [];
 
 			setFetchedComments(comments);
+			setFetchedCommentsLoaded(true);
 			setCommentNoLongerAvailable(
 				isCommentNoLongerAvailable(comments, highlightedCommentId)
 			);
@@ -361,6 +365,27 @@ export default function CommentsPanel({
 					))}
 				</ul>
 			) : null}
+
+			{(hasInitialComments || fetchedCommentsLoaded) &&
+				!comments.length && (
+					<div className="p-4 text-center">
+						<ClayEmptyState
+							description={
+								readOnly
+									? Liferay.Language.get(
+											'you-do-not-have-permission-to-add-comments'
+										)
+									: undefined
+							}
+							imgSrc={getImage('no_comments.svg')}
+							imgSrcReducedMotion={null}
+							small
+							title={Liferay.Language.get(
+								'there-are-no-comments-yet'
+							)}
+						/>
+					</div>
+				)}
 		</>
 	);
 }
